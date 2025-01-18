@@ -1,8 +1,8 @@
-import React from 'react'
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
-import { createNativeStackNavigator } from '@react-navigation/native-stack'
+import {
+  BottomTabNavigationProp,
+  createBottomTabNavigator,
+} from '@react-navigation/bottom-tabs'
 import { gluestackUIConfig } from '../../config/gluestack-ui.config'
-import { Platform } from 'react-native'
 
 import HomeSvg from '@assets/home.svg'
 import HistorySvg from '@assets/history.svg'
@@ -12,27 +12,25 @@ import { Home } from '@screens/Home'
 import { History } from '@screens/History'
 import { Profile } from '@screens/Profile'
 import { Exercise } from '@screens/Exercise'
+import { Platform } from 'react-native'
 
-type TabRoutes = {
+type AppRoutes = {
   home: undefined
-  history: undefined
-  profile: undefined
-}
-
-type StackRoutes = {
-  TabRoutes: undefined
   exercise: undefined
+  profile: undefined
+  history: undefined
 }
 
-const Tab = createBottomTabNavigator<TabRoutes>()
-const Stack = createNativeStackNavigator<StackRoutes>()
+export type AppNavigatorRoutesProps = BottomTabNavigationProp<AppRoutes>
 
-function TabRoutes() {
+const { Navigator, Screen } = createBottomTabNavigator<AppRoutes>()
+
+export function AppRoutes() {
   const { tokens } = gluestackUIConfig
   const iconSize = tokens.space['6']
 
   return (
-    <Tab.Navigator
+    <Navigator
       screenOptions={{
         headerShown: false,
         tabBarShowLabel: false,
@@ -47,7 +45,7 @@ function TabRoutes() {
         },
       }}
     >
-      <Tab.Screen
+      <Screen
         name="home"
         component={Home}
         options={{
@@ -56,7 +54,7 @@ function TabRoutes() {
           ),
         }}
       />
-      <Tab.Screen
+      <Screen
         name="history"
         component={History}
         options={{
@@ -65,7 +63,7 @@ function TabRoutes() {
           ),
         }}
       />
-      <Tab.Screen
+      <Screen
         name="profile"
         component={Profile}
         options={{
@@ -74,15 +72,11 @@ function TabRoutes() {
           ),
         }}
       />
-    </Tab.Navigator>
-  )
-}
-
-export function AppRoutes() {
-  return (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="TabRoutes" component={TabRoutes} />
-      <Stack.Screen name="exercise" component={Exercise} />
-    </Stack.Navigator>
+      <Screen
+        name="exercise"
+        component={Exercise}
+        options={{ tabBarButton: () => null }}
+      />
+    </Navigator>
   )
 }
