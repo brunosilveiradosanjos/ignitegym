@@ -7,6 +7,7 @@ import {
   ScrollView,
 } from '@gluestack-ui/themed'
 import { useNavigation } from '@react-navigation/native'
+import * as yup from 'yup'
 
 import { Input } from '@components/Input'
 
@@ -14,9 +15,37 @@ import BackgroundImg from '@assets/background.png'
 import Logo from '@assets/logo.svg'
 import { Button } from '@components/Button'
 import { AuthNavigatorRoutesProps } from '@routes/auth.routes'
+import { Controller, useForm } from 'react-hook-form'
+import { yupResolver } from '@hookform/resolvers/yup'
+
+type FormDataProps = {
+  email: string
+  password: string
+}
+
+const signInSchema = yup.object({
+  email: yup.string().required('E-mail is required').email('Invalid e-mail'),
+  password: yup
+    .string()
+    .required('Password is required')
+    .min(10, 'The password must have at least 10 digits'),
+})
 
 export function SignIn() {
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<FormDataProps>({
+    resolver: yupResolver(signInSchema),
+  })
+
   const navigator = useNavigation<AuthNavigatorRoutesProps>()
+
+  function handleSignIn(data: FormDataProps) {
+    console.log('data ', data)
+  }
+
   function handleSignUp() {
     navigator.navigate('signUp')
   }
@@ -44,13 +73,35 @@ export function SignIn() {
           </Center>
           <Center gap="$2">
             <Heading color="$gray100">Access your account</Heading>
-            <Input
-              placeholder="Email"
-              keyboardType="email-address"
-              autoCapitalize="none"
+            <Controller
+              control={control}
+              name="email"
+              render={({ field: { onChange, value } }) => (
+                <Input
+                  placeholder="E-mail"
+                  onChangeText={onChange}
+                  value={value}
+                  errorMessage={errors?.email?.message}
+                />
+              )}
             />
-            <Input placeholder="Password" secureTextEntry />
-            <Button title="Sign In" />
+            <Controller
+              control={control}
+              name="password"
+              render={({ field: { onChange, value } }) => (
+                <Input
+                  placeholder="Password"
+                  onChangeText={onChange}
+                  value={value}
+                  errorMessage={errors?.password?.message}
+                  onSubmitEditing={handleSubmit(handleSignIn)}
+                  returnKeyType="send"
+                  secureTextEntry
+                />
+              )}
+            />
+
+            <Button title="Sign In" onPress={handleSubmit(handleSignIn)} />
           </Center>
           <Center flex={1} justifyContent="flex-end" gap="$2">
             <Text color="$gray100" fontSize="$sm" fontFamily="$body">
