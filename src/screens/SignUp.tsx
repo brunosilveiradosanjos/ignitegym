@@ -57,8 +57,17 @@ export function SignUp() {
     navigator.navigate('signIn')
   }
 
-  function handleSignUp(data: FormDataProps) {
-    console.log('data ', data)
+  async function handleSignUp({ name, email, password }: FormDataProps) {
+    const response = await fetch('http://192.168.1.12:3333/users', {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ name, email, password }),
+    })
+
+    console.log(await response.json())
   }
 
   return (
