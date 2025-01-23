@@ -5,6 +5,7 @@ import {
   Text,
   Heading,
   ScrollView,
+  useToast,
 } from '@gluestack-ui/themed'
 import { useNavigation } from '@react-navigation/native'
 import * as yup from 'yup'
@@ -17,6 +18,11 @@ import { Button } from '@components/Button'
 import { AuthNavigatorRoutesProps } from '@routes/auth.routes'
 import { Controller, useForm } from 'react-hook-form'
 import { yupResolver } from '@hookform/resolvers/yup'
+// Context
+import { useAuth } from '@hooks/useAuth'
+import { AppError } from '@utils/AppError'
+import { ToastMessage } from '@components/ToastMessage'
+import { useState } from 'react'
 
 type FormDataProps = {
   email: string
@@ -28,10 +34,13 @@ const signInSchema = yup.object({
   password: yup
     .string()
     .required('Password is required')
-    .min(10, 'The password must have at least 10 digits'),
+    .min(6, 'The password must have at least 6 digits'),
 })
 
 export function SignIn() {
+  const [isLoading, setIsLoading] = useState<boolean>(false)
+  const toast = useToast()
+  const { signIn } = useAuth()
   const {
     control,
     handleSubmit,
@@ -42,8 +51,40 @@ export function SignIn() {
 
   const navigator = useNavigation<AuthNavigatorRoutesProps>()
 
-  function handleSignIn(data: FormDataProps) {
-    console.log('data ', data)
+  async function handleSignIn({ email, password }: FormDataProps) {
+    try {
+      setIsLoading(true)
+      await signIn(email, password)
+      return toast.show({
+        placement: 'top',
+        render: ({ id }) => (
+          <ToastMessage
+            id={id}
+            description={'Successfully logged in'}
+            onClose={() => toast.close(id)}
+          />
+        ),
+      })
+    } catch (error) {
+      console.log(error)
+      setIsLoading(false)
+      const isAppError = error instanceof AppError
+      const description = isAppError
+        ? error?.message
+        : 'Login failed. Try again later'
+      return toast.show({
+        placement: 'top',
+        render: ({ id }) => (
+          <ToastMessage
+            id={id}
+            action="error"
+            title="Error"
+            description={description}
+            onClose={() => toast.close(id)}
+          />
+        ),
+      })
+    }
   }
 
   function handleSignUp() {
@@ -101,7 +142,11 @@ export function SignIn() {
               )}
             />
 
-            <Button title="Sign In" onPress={handleSubmit(handleSignIn)} />
+            <Button
+              title="Sign In"
+              onPress={handleSubmit(handleSignIn)}
+              isLoading={isLoading}
+            />
           </Center>
           <Center flex={1} justifyContent="flex-end" gap="$2">
             <Text color="$gray100" fontSize="$sm" fontFamily="$body">
