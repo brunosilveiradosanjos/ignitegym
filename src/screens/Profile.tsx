@@ -16,6 +16,7 @@ import { Center, Heading, Text, useToast, VStack } from '@gluestack-ui/themed'
 import { useAuth } from '@hooks/useAuth'
 import { api } from '@services/api'
 import { AppError } from '@utils/AppError'
+import defaultUserPhotoImg from '@assets/userPhotoDefault.png'
 
 type FormDataProps = {
   name: string
@@ -50,9 +51,7 @@ const profileSchema = yup.object({
 })
 export function Profile() {
   const [isUpdating, setIsUpdating] = useState(false)
-  const [userPhoto, setUserPhoto] = useState(
-    'https://github.com/brunosilveiradosanjos.png'
-  )
+  const [userPhoto, setUserPhoto] = useState()
   const toast = useToast()
   const { user, updateUserProfile } = useAuth()
   const {
@@ -69,23 +68,26 @@ export function Profile() {
 
   async function handleUserPhotoselect() {
     try {
-      const selectedPhoto = await ImagePicker.launchImageLibraryAsync({
+      const dataPhoto = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ['images'],
         quality: 1,
         aspect: [4, 4],
+        allowsEditing: true,
         // base64: true,
       })
 
-      if (selectedPhoto.canceled) return
-      const photoURI = selectedPhoto.assets[0].uri
-      if (photoURI) {
-        const selectedPhotoInfo = (await FileSystem.getInfoAsync(photoURI)) as {
+      if (dataPhoto.canceled) return
+      const selectedPhoto = dataPhoto.assets[0]
+      if (selectedPhoto.uri) {
+        const selectedPhotoInfo = (await FileSystem.getInfoAsync(
+          selectedPhoto.uri
+        )) as {
           size: number
         }
 
         if (
           selectedPhotoInfo.size &&
-          selectedPhotoInfo.size / 1024 / 1024 > 1
+          selectedPhotoInfo.size / 1024 / 1024 > 5
         ) {
           return toast.show({
             placement: 'top',
@@ -100,7 +102,44 @@ export function Profile() {
             ),
           })
         }
-        setUserPhoto(selectedPhoto.assets[0].uri)
+
+        const fileExtension = selectedPhoto.uri.split('.').pop()
+
+        const photoFile = {
+          name: `${user.name}.${fileExtension}`
+            .toLocaleLowerCase()
+            .replaceAll(' ', ''),
+          uri: selectedPhoto.uri,
+          type: `${selectedPhoto.type}/${fileExtension}`,
+        } as any
+
+        const userPhotoUploadForm = new FormData()
+        userPhotoUploadForm.append('avatar', photoFile)
+
+        const avatarUpdateResponse = await api.patch(
+          '/users/avatar',
+          userPhotoUploadForm,
+          {
+            headers: {
+              'Content-Type': 'multipart/form-data',
+            },
+          }
+        )
+
+        const updatedUser = user
+        updatedUser.avatar = avatarUpdateResponse.data.avatar
+        updateUserProfile(updatedUser)
+
+        return toast.show({
+          placement: 'top',
+          render: ({ id }) => (
+            <ToastMessage
+              id={id}
+              description={'Avatar successfully updated'}
+              onClose={() => toast.close(id)}
+            />
+          ),
+        })
       }
     } catch (error) {
       console.log(error)
@@ -157,7 +196,11 @@ export function Profile() {
       <ScrollView contentContainerStyle={{ paddingBottom: 36 }}>
         <Center mt="$6" px="$10">
           <UserPhoto
-            source={{ uri: userPhoto }}
+            source={
+              user.avatar
+                ? { uri: `${api.defaults.baseURL}/avatar/${user.avatar}` }
+                : defaultUserPhotoImg
+            }
             size="xl"
             alt="Imagem do usuário"
           />
