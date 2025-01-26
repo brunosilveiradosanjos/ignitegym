@@ -120,6 +120,8 @@ export function SignIn() {
               render={({ field: { onChange, value } }) => (
                 <Input
                   placeholder="E-mail"
+                  keyboardType="email-address"
+                  autoCapitalize="none"
                   onChangeText={onChange}
                   value={value}
                   errorMessage={errors?.email?.message}
