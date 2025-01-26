@@ -16,7 +16,7 @@ import { Platform } from 'react-native'
 
 type AppRoutes = {
   home: undefined
-  exercise: undefined
+  exercise: { exerciseId: string }
   profile: undefined
   history: undefined
 }
@@ -75,7 +75,11 @@ export function AppRoutes() {
       <Screen
         name="exercise"
         component={Exercise}
-        options={{ tabBarButton: () => null }}
+        options={{
+          tabBarItemStyle: {
+            display: 'none',
+          },
+        }}
       />
     </Navigator>
   )
